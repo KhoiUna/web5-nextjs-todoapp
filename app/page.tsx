@@ -47,11 +47,13 @@ export default function Home() {
 
         if (!records) return setTodos([])
 
-        const todos = []
+        let todos: Todo[] = []
         for (let record of records) {
           const data = await record.data.json()
           todos.push({ record, data, id: record.id })
         }
+
+        todos = todos.sort((a, b) => Number(a.data.completed) - Number(b.data.completed))
 
         return setTodos(todos)
       } catch (error) {
