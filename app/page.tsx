@@ -122,7 +122,6 @@ export default function Home() {
         }
       });
 
-      //
       setTodos(prev => prev.map(item => {
         if (item.record.id === todo.record.id) {
           item.data.completed = !todo.data.completed
