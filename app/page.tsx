@@ -138,6 +138,10 @@ export default function Home() {
 
   return (
     <main className="bg-slate-100 pt-10 px-3 min-h-screen m-auto">
+      <div className='mb-8'>
+        <a target='_blank' className='underline text-blue-500 font-bold' href="https://github.com/KhoiUna/web5-nextjs-todoapp">Source code</a>
+      </div>
+
       <div className="w-fit m-auto">
         <form
           onSubmit={addTodo}
