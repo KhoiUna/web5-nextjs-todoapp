@@ -10,6 +10,7 @@ type Todo = {
   record: Record
   data: {
     text: string
+    completed: boolean
   }
   id: string
 }
@@ -40,7 +41,8 @@ export default function Home() {
             filter: {
               schema: 'http://some-schema-registry.org/todo'
             },
-          }
+            dateSort: 'createdDescending'
+          },
         });
 
         if (!records) return setTodos([])
@@ -67,7 +69,10 @@ export default function Home() {
       if (!web5) throw 'Error init Web5'
 
       const { record } = await web5.dwn.records.create({
-        data: { text: description },
+        data: {
+          text: description,
+          completed: false
+        },
         message: {
           schema: 'http://some-schema-registry.org/todo',
           dataFormat: 'application/json'
@@ -85,15 +90,54 @@ export default function Home() {
     }
   }
 
+  const deleteTodo = async ({ todo }: { todo: Todo }) => {
+    try {
+      if (!web5) throw 'Error init Web5'
 
+      await web5.dwn.records.delete({
+        message: {
+          recordId: todo.record.id
+        }
+      });
+
+      setTodos(prev => prev.filter(item => item.record.id !== todo.record.id))
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  const toggleTodoStatus = async ({ todo }: { todo: Todo }) => {
+    try {
+      // Get record in DWN
+      const { record } = await web5.dwn.records.read({
+        message: {
+          recordId: todo.record.id,
+        }
+      });
+
+      // Update the record in DWN
+      await record.update({
+        data: {
+          ...todo.data, completed: !todo.data.completed
+        }
+      });
+
+      //
+      setTodos(prev => prev.map(item => {
+        if (item.record.id === todo.record.id) {
+          item.data.completed = !todo.data.completed
+        }
+
+        return item
+      }))
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   return (
-    <main className="bg-slate-100 p-10 min-h-screen m-auto">
+    <main className="bg-slate-100 pt-10 px-3 min-h-screen m-auto">
       <div className="w-fit m-auto">
-        {todos.map((item, index) => (
-          <TodoCard key={index} description={item.data.text} />
-        ))}
-
         <form
           onSubmit={addTodo}
           className="w-[350px] h-[70px] bg-white drop-shadow-lg flex justify-around items-center p-3 my-3 rounded-lg text-slate-500">
@@ -108,21 +152,37 @@ export default function Home() {
             className='bg-slate-50 p-2 rounded-lg ml-3'
           >Add</button>
         </form>
+
+        {todos.map((item, index) => (
+          <TodoCard key={index} todo={item} deleteTodo={deleteTodo} toggleTodoStatus={toggleTodoStatus} />
+        ))}
       </div>
     </main >
   )
 }
 
-function TodoCard({ description }: {
-  description: string
+function TodoCard({ todo, deleteTodo, toggleTodoStatus }: {
+  todo: Todo
+  toggleTodoStatus: ({ todo }: { todo: Todo }) => void
+  deleteTodo: ({ todo }: { todo: Todo }) => void
 }) {
   return (
-    <div className="w-[350px] h-[70px] bg-white drop-shadow-lg flex justify-around items-center p-3 my-3 rounded-lg">
-      <input type="checkbox" />
+    <div
+      className={"w-[350px] h-[70px] bg-white drop-shadow-lg flex justify-around items-center p-3 my-3 rounded-lg "
+        + `${todo.data.completed ? 'opacity-40' : ''}`
+      }
+    >
+      <input type="checkbox" checked={todo.data.completed}
+        onChange={() => toggleTodoStatus({ todo })}
+      />
 
-      <p className="truncate mx-3">{description}</p>
+      <p
+        className={"truncate mx-3 " + `${todo.data.completed ? 'line-through' : ''}`}
+      >{todo.data.text}</p>
 
-      <button type="button" className="text-red-500 bg-red-100 p-2 rounded-lg">
+      <button type="button" className="text-red-500 bg-red-100 p-2 rounded-lg"
+        onClick={() => deleteTodo({ todo })}
+      >
         <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 256 256"><path fill="currentColor" d="M216 48h-36V36a28 28 0 0 0-28-28h-48a28 28 0 0 0-28 28v12H40a12 12 0 0 0 0 24h4v136a20 20 0 0 0 20 20h128a20 20 0 0 0 20-20V72h4a12 12 0 0 0 0-24ZM100 36a4 4 0 0 1 4-4h48a4 4 0 0 1 4 4v12h-56Zm88 168H68V72h120Zm-72-100v64a12 12 0 0 1-24 0v-64a12 12 0 0 1 24 0Zm48 0v64a12 12 0 0 1-24 0v-64a12 12 0 0 1 24 0Z" /></svg>
       </button>
     </div>
