@@ -1,7 +1,11 @@
 'use client'
 
 import { SyntheticEvent, useEffect, useState } from 'react';
-import { Web5, Record } from '@web5/api'
+import { Record } from '@web5/api'
+// @ts-ignore
+import * as W5 from '../node_modules/@web5/api/dist/browser';
+
+const { Web5 } = W5
 
 type Todo = {
   record: Record
@@ -13,7 +17,7 @@ type Todo = {
 }
 
 export default function Home() {
-  const [web5, setWeb5] = useState<Web5>()
+  const [web5, setWeb5] = useState<typeof Web5>()
   const [myDid, setMyDid] = useState('')
   const [todos, setTodos] = useState<Todo[]>([])
 
@@ -136,6 +140,26 @@ export default function Home() {
       console.error(error);
     }
   }
+
+  if (!myDid) return (
+    <main className="bg-slate-100 pt-10 px-3 min-h-screen m-auto">
+      <div className='mb-8'>
+        <a target='_blank' className='underline text-blue-500 font-bold' href="https://github.com/KhoiUna/web5-nextjs-todoapp">Source code</a>
+      </div>
+
+      <div className="w-fit m-auto">
+        <form
+          onSubmit={event => event.preventDefault()}
+          className="w-[350px] h-[70px] bg-white drop-shadow-lg flex justify-around items-center p-3 my-3 rounded-lg text-slate-500">
+          <input autoComplete='off' className='text-black outline-none border-2 border-slate-300 p-2 rounded-lg' type="text" placeholder='Type here' />
+
+          <button type="submit" className='bg-slate-50 p-2 rounded-lg ml-3'>Add</button>
+        </form>
+
+        <p className='italic mt-8 text-center'>Loading...</p>
+      </div>
+    </main>
+  )
 
   return (
     <main className="bg-slate-100 pt-10 px-3 min-h-screen m-auto">
