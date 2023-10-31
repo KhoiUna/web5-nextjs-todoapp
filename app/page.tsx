@@ -1,10 +1,7 @@
 'use client'
 
-import { Record } from '@tbd54566975/web5/dist/types/record';
 import { SyntheticEvent, useEffect, useState } from 'react';
-// @ts-ignore
-import * as TBD from '../node_modules/@tbd54566975/web5/dist/browser';
-const { Web5 } = TBD
+import { Web5, Record } from '@web5/api'
 
 type Todo = {
   record: Record
@@ -16,7 +13,7 @@ type Todo = {
 }
 
 export default function Home() {
-  const [web5, setWeb5] = useState<typeof Web5>()
+  const [web5, setWeb5] = useState<Web5>()
   const [myDid, setMyDid] = useState('')
   const [todos, setTodos] = useState<Todo[]>([])
 
@@ -36,15 +33,17 @@ export default function Home() {
   useEffect(() => {
     const getTodos = async () => {
       try {
-        const { records } = await web5.dwn.records.query({
+        const response = await web5?.dwn.records.query({
           message: {
             filter: {
               schema: 'http://some-schema-registry.org/todo'
             },
-            dateSort: 'createdDescending'
+            dateSort: 'createdDescending' as any
           },
         });
+        if (!response) return setTodos([])
 
+        const { records } = response
         if (!records) return setTodos([])
 
         let todos: Todo[] = []
@@ -110,6 +109,8 @@ export default function Home() {
 
   const toggleTodoStatus = async ({ todo }: { todo: Todo }) => {
     try {
+      if (!web5) throw 'Error init Web5'
+
       // Get record in DWN
       const { record } = await web5.dwn.records.read({
         message: {
@@ -162,7 +163,7 @@ export default function Home() {
           <TodoCard key={index} todo={item} deleteTodo={deleteTodo} toggleTodoStatus={toggleTodoStatus} />
         ))}
       </div>
-    </main >
+    </main>
   )
 }
 
